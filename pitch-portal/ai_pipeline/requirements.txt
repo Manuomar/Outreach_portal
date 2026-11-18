@@ -1,0 +1,30 @@
+# requests>=2.31
+# PyMySQL>=1.1
+# Flask>=3.0
+# google-genai>=1.0      # optional: reasoning/post-call analysis (Gemini). Bina iske rule-based fallback chalega
+# twilio>=9.0            # optional: sirf Twilio se hard hangup ke liye
+
+
+# =============================================================================
+# Outreach Portal — AI Voice & Webhook Pipeline Dependencies
+# Python Version: 3.10+ / 3.11+
+# =============================================================================
+
+# Core HTTP client for Bolna API & Webhook calls
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Database connectivity (MySQL / MariaDB)
+PyMySQL>=1.1.0
+
+# Local Webhook listener server
+Flask>=3.0.0
+
+# Environment variables (.env file loader)
+python-dotenv>=1.0.0
+
+# Google Gemini / GenAI SDK (Prompt Generation & Reasoning analysis)
+google-genai>=1.0.0
+
+# Optional: Telephony provider support (Hard hangup / Twilio SIP integration)
+twilio>=9.0.0

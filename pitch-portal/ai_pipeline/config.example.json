@@ -1,0 +1,42 @@
+{
+  "_note": "Is file ko copy karke config.json banao. config.json ko KABHI git/zip me mat daalo. Keys env vars se bhi de sakte ho.",
+  "bolna": {
+    "api_key": "bn-XXXXXXXX",
+    "agent_id": "BOLNA_AGENT_ID_YAHAN",
+    "base_url": "https://api.bolna.ai",
+    "from_phone_number": "",
+    "webhook_secret": ""
+  },
+  "gemini": {
+    "api_keys": ["GEMINI_KEY_1"],
+    "models": ["gemini-2.5-flash", "gemini-2.5-flash-lite"],
+    "temperature": 0.0
+  },
+  "twilio": {
+    "account_sid": "",
+    "auth_token": ""
+  },
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "database": "ajay_pitch",
+    "user": "root",
+    "password": "",
+    "charset": "utf8mb4"
+  },
+  "agent": {
+    "name": "Ajay",
+    "gender": "male",
+    "language": "hi",
+    "company_name": "COMPANY_NAME_YAHAN",
+    "product_name": "ITI CCIMS",
+    "llm_provider": "openai",
+    "llm_model": "gpt-4.1-mini",
+    "voice_provider": "elevenlabs",
+    "voice_name": "MALE_HINDI_VOICE_NAME",
+    "voice_id": "MALE_HINDI_VOICE_ID",
+    "voice_model": "eleven_turbo_v2_5",
+    "webhook_url": "https://YOUR-TUNNEL-OR-DOMAIN/api/bolna/webhook"
+  },
+  "timezone_offset_minutes": 330
+}

@@ -1,0 +1,50 @@
+{
+    "_note": "config.json - Is file me credentials aur settings rahengi.",
+    "bolna": {
+        "api_key": "bn-eddb599adb9743a19a8c1d36a35fedf9",
+        "agent_id": "45b5c36e-b85d-4302-8eb0-9c06f5c0e091",
+        "base_url": "https://api.bolna.ai",
+        "from_phone_number": "",
+        "webhook_secret": ""
+    },
+    "gemini": {
+        "api_keys": [
+           
+        ],
+        "models": [
+            "gemini-flash-lite-latest",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-3.8-flash",
+            "gemini-3.6-flash"
+        ],
+        "temperature": 0
+    },
+    "twilio": {
+        "account_sid": "",
+        "auth_token": ""
+    },
+    "database": {
+        "host": "127.0.0.1",
+        "port": 3306,
+        "database": "pitch_portal",
+        "user": "root",
+        "password": "",
+        "charset": "utf8mb4"
+    },
+    "agent": {
+        "name": "Ajay",
+        "gender": "male",
+        "language": "hi",
+        "company_name": "Vdai Biosec",
+        "product_name": "ITI CCIMS",
+        "llm_provider": "anthropic",
+        "llm_model": "claude-sonnet-4-20250514",
+        "voice_provider": "elevenlabs",
+        "voice_name": "Aakash Aryan - Helpful and Supportive",
+        "voice_id": "N2al4jd45e882svx17SU",
+        "voice_model": "eleven_turbo_v2_5",
+        "webhook_url": "https://responsibilities-replacing-views-cancellation.trycloudflare.com/pitch-portal/public/api/bolna/webhook"
+    },
+    "timezone_offset_minutes": 330
+}
