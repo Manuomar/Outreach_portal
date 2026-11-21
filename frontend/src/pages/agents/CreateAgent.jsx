@@ -480,6 +480,7 @@ export default function CreateAgent() {
   const [templateMsg, setTemplateMsg] = useState(null)
 
   // Gemini document generator & Key management
+  const [pitchMode, setPitchMode] = useState('consultative')
   const [genFiles, setGenFiles] = useState([])
   const [genHint, setGenHint] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -717,6 +718,7 @@ export default function CreateAgent() {
       if (genHint.trim()) {
         fd.append('project_hint', genHint.trim())
       }
+      fd.append('pitch_mode', pitchMode)
       const result = await api.generateFromDocument(fd)
       setGenResult(result)
     } catch (err) {
@@ -1075,12 +1077,66 @@ export default function CreateAgent() {
               </div>
             </div>
 
+            <div style={{ marginTop: '12px', marginBottom: '14px' }}>
+              <label style={labelStyle}>2. Target Pitch Approach</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setPitchMode('consultative')}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: pitchMode === 'consultative' ? '2px solid #f26522' : '1px solid #cbd5e1',
+                    background: pitchMode === 'consultative' ? '#fff7ed' : '#fff',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: pitchMode === 'consultative' ? '#c2410c' : '#334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>🌐 General Solutions (Consultative)</span>
+                    {pitchMode === 'consultative' && <span style={{ fontSize: '10px', background: '#f26522', color: '#fff', padding: '1px 6px', borderRadius: '4px' }}>Active</span>}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', lineHeight: 1.4 }}>
+                    Company intro ➔ discover customer department &amp; needs ➔ pitch matching solution dynamically.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPitchMode('specific')}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: pitchMode === 'specific' ? '2px solid #103778' : '1px solid #cbd5e1',
+                    background: pitchMode === 'specific' ? '#f0f5ff' : '#fff',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: pitchMode === 'specific' ? '#103778' : '#334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>🎯 Single Specific Project</span>
+                    {pitchMode === 'specific' && <span style={{ fontSize: '10px', background: '#103778', color: '#fff', padding: '1px 6px', borderRadius: '4px' }}>Active</span>}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', lineHeight: 1.4 }}>
+                    Focus directly on one project (e.g. Panchayat Gateway) with grand problem, stats &amp; impact.
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div>
-              <label style={labelStyle}>2. Optional Project Context / Hint</label>
+              <label style={labelStyle}>
+                3. Optional Focus / Context Hint
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal', marginLeft: '6px' }}>
+                  {pitchMode === 'specific' ? '(e.g. Specify project name like Panchayat Gateway or Court Case)' : '(e.g. Target region, state or specific department emphasis)'}
+                </span>
+              </label>
               <input
                 value={genHint}
                 onChange={e => setGenHint(e.target.value)}
-                placeholder="e.g. Panchayat Gateway voucher monitoring system in UP"
+                placeholder={pitchMode === 'specific' ? "e.g. Panchayat Gateway voucher monitoring system in UP" : "e.g. Focus on e-Governance and automated attendance in UP"}
                 style={inputStyle}
               />
             </div>
@@ -1128,8 +1184,24 @@ export default function CreateAgent() {
                     <Check size={16} /> Prompt, Knowledge Base &amp; Extractions Generated Successfully!
                   </div>
                   {genResult.model_used && (
-                    <div style={{ fontSize: '11px', color: '#15803d', marginTop: '2px' }}>
-                      Generated using model: <code>{genResult.model_used}</code>
+                    <div style={{ fontSize: '11px', color: '#15803d', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>Generated using model: <code>{genResult.model_used}</code></span>
+                      {genResult.pitch_mode && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          padding: '1px 7px',
+                          borderRadius: '4px',
+                          background: genResult.pitch_mode === 'consultative' ? '#ffedd5' : '#e0e7ff',
+                          color: genResult.pitch_mode === 'consultative' ? '#c2410c' : '#1e40af',
+                          border: genResult.pitch_mode === 'consultative' ? '1px solid #fed7aa' : '1px solid #c7d2fe'
+                        }}>
+                          {genResult.pitch_mode === 'consultative' ? '🌐 Consultative Multi-Solution' : '🎯 Single Specific Project'}
+                        </span>
+                      )}
                     </div>
                   )}
                   {Array.isArray(genResult.analyzed_files) && genResult.analyzed_files.length > 0 && (
