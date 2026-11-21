@@ -184,6 +184,10 @@ export default function CallHistory() {
   const [exportModalLoading, setExportModalLoading] = useState(false)
   const [exportModalDetails, setExportModalDetails] = useState(null)
 
+  // Bolna Live Sync State
+  const [syncingAll, setSyncingAll] = useState(false)
+  const [syncingCallIds, setSyncingCallIds] = useState(new Set())
+
   const load = useCallback(() => {
     setLoading(true)
     const params = {}
@@ -198,6 +202,39 @@ export default function CallHistory() {
   }, [interestFilter])
 
   useEffect(() => { load() }, [load])
+
+  // Bolna AI Sync Handlers
+  const handleSyncBolna = async () => {
+    if (syncingAll) return
+    setSyncingAll(true)
+    try {
+      const targetIds = (rows || []).slice(0, 30).map(c => c.id).filter(Boolean)
+      await api.syncBatchCalls({ call_ids: targetIds, limit: 30 })
+    } catch (e) {
+      console.warn('Batch sync notice:', e)
+    } finally {
+      load()
+      setSyncingAll(false)
+    }
+  }
+
+  const handleSyncSingleCall = async (callId) => {
+    if (!callId || syncingCallIds.has(callId)) return
+    setSyncingCallIds(prev => new Set(prev).add(callId))
+    try {
+      await api.syncCall(callId)
+      load()
+    } catch (e) {
+      console.error(`Failed to sync call #${callId}:`, e)
+      alert(`Sync failed for Call #${callId}: ` + (e.message || 'Unknown error'))
+    } finally {
+      setSyncingCallIds(prev => {
+        const next = new Set(prev)
+        next.delete(callId)
+        return next
+      })
+    }
+  }
 
   // Export handlers
   const handleExportTableExcel = () => {
@@ -519,7 +556,33 @@ export default function CallHistory() {
             <button
               type="button"
               className="header-btn"
+              onClick={handleSyncBolna}
+              disabled={syncingAll}
+              title="Sync latest call status, AI answers & transcripts directly from Bolna AI"
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                borderRadius: '6px',
+                cursor: syncingAll ? 'not-allowed' : 'pointer',
+                boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
+              }}
+            >
+              <RefreshCw size={12} className={syncingAll ? 'spin' : ''} />
+              <span>{syncingAll ? 'Syncing Bolna…' : 'Sync Bolna'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="header-btn"
               onClick={load}
+              title="Refresh table from local database"
               style={{
                 background: 'rgba(255,255,255,0.15)',
                 color: '#ffffff',
@@ -746,6 +809,16 @@ export default function CallHistory() {
                             style={{ color: isExpanded ? '#f26522' : '#8b5cf6' }}
                           >
                             <Sparkles size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-btn"
+                            title={`Sync Call #${r.id} with Bolna AI`}
+                            onClick={() => handleSyncSingleCall(r.id)}
+                            disabled={syncingCallIds.has(r.id)}
+                            style={{ color: '#2563eb' }}
+                          >
+                            <RefreshCw size={15} className={syncingCallIds.has(r.id) ? 'spin' : ''} />
                           </button>
                           <Link to={`/calls/${r.id}`} className="icon-btn" title="View Call Details">
                             <Eye size={15} />

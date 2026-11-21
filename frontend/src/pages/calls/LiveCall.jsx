@@ -263,6 +263,10 @@ export default function LiveCall() {
   const [exportModalLoading, setExportModalLoading] = useState(false)
   const [exportModalDetails, setExportModalDetails] = useState(null)
 
+  // Bolna Live Sync State
+  const [syncingAll, setSyncingAll] = useState(false)
+  const [syncingCallIds, setSyncingCallIds] = useState(new Set())
+
   const loadStats = useCallback(() => {
     api.stats().then(r => setStats(r)).catch(() => { })
   }, [])
@@ -305,23 +309,73 @@ export default function LiveCall() {
     loadStats()
   }, [loadLeads, loadCalls, loadStats, searchParams])
 
-  // sync active & recently completed calls every 3 seconds
+  // Manual Batch Sync from Bolna AI for all recent calls
+  const handleSyncBolna = useCallback(async () => {
+    if (syncingAll) return
+    setSyncingAll(true)
+    try {
+      const targetIds = (callsRef.current || []).slice(0, 30).map(c => c.id).filter(Boolean)
+      await api.syncBatchCalls({ call_ids: targetIds, limit: 30 })
+    } catch (e) {
+      console.warn('Batch sync endpoint notice, falling back to individual sync:', e)
+      try {
+        const topCalls = (callsRef.current || [])
+          .slice(0, 8)
+          .filter(c => c.id && (ACTIVE.includes(c.call_status) || !c.summary || !c.answers?.length))
+        await Promise.allSettled(topCalls.map(c => api.syncCall(c.id)))
+      } catch (err) {
+        console.error('Fallback sync error:', err)
+      }
+    } finally {
+      loadCalls()
+      setSyncingAll(false)
+    }
+  }, [syncingAll, loadCalls])
+
+  // Single Call Sync from Bolna AI
+  const handleSyncSingleCall = useCallback(async (callId) => {
+    if (!callId || syncingCallIds.has(callId)) return
+    setSyncingCallIds(prev => new Set(prev).add(callId))
+    try {
+      await api.syncCall(callId)
+      loadCalls()
+    } catch (e) {
+      console.error(`Failed to sync call #${callId}:`, e)
+      alert(`Sync failed for Call #${callId}: ` + (e.message || 'Unknown error'))
+    } finally {
+      setSyncingCallIds(prev => {
+        const next = new Set(prev)
+        next.delete(callId)
+        return next
+      })
+    }
+  }, [syncingCallIds, loadCalls])
+
+  // Auto-sync active calls & calls missing post-call AI extractions/summary every 4 seconds
   useEffect(() => {
     const t = setInterval(async () => {
       const now = Date.now()
-      const act = callsRef.current.filter(c => {
+      const act = (callsRef.current || []).filter(c => {
+        // If an organizer manually edited this call, NEVER auto-sync or overwrite it!
+        if (Number(c.is_manual) === 1) return false
         if (ACTIVE.includes(c.call_status)) return true
-        // Also sync recently completed calls (<45s) to capture post-call extracted fields & recording
-        if (c.call_status === 'completed' && c.created_at) {
+        // PREVIOUS LOGIC (commented for reference):
+        // if (c.call_status === 'completed' && c.created_at) {
+        //   const diffMs = now - new Date(c.created_at).getTime()
+        //   if (diffMs < 45000) return true
+        // }
+        // NEW LOGIC: Also sync completed/recent calls that are missing answers or summary (within 15 minutes)
+        if (c.created_at && (!c.answers || c.answers.length === 0 || !c.summary)) {
           const diffMs = now - new Date(c.created_at).getTime()
-          if (diffMs < 45000) return true
+          if (diffMs < 900000) return true
         }
         return false
       })
       if (!act.length) return
-      await Promise.all(act.map(c => api.syncCall(c.id).catch(() => { })))
+      const toSync = act.slice(0, 4)
+      await Promise.allSettled(toSync.map(c => api.syncCall(c.id)))
       loadCalls()
-    }, 3000)
+    }, 4000)
     return () => clearInterval(t)
   }, [loadCalls])
 
@@ -599,6 +653,7 @@ export default function LiveCall() {
       const payload = {
         call_status: editStatus,
         interest_status: editInterest,
+        is_manual: editStatus === 'queued' ? 0 : 1,
       }
       if (editDemoAgreed === '1') {
         payload.it_head_call_agreed = 1
@@ -607,6 +662,13 @@ export default function LiveCall() {
       } else {
         payload.it_head_call_agreed = null
       }
+
+      // Optimistically update local call list so UI immediately reflects change and won't flicker
+      setCalls(prev => prev.map(c => c.id === editingCall.id ? {
+        ...c,
+        ...payload,
+        is_manual: editStatus === 'queued' ? 0 : 1,
+      } : c))
 
       await api.updateCall(editingCall.id, payload)
       if (editStatus === 'queued') {
@@ -1259,7 +1321,32 @@ export default function LiveCall() {
               <span>Export PDF</span>
             </button>
 
-            <button type="button" className="header-btn" onClick={loadCalls}>
+            <button
+              type="button"
+              className="header-btn"
+              onClick={handleSyncBolna}
+              disabled={syncingAll}
+              title="Sync latest call status, AI answers & transcripts directly from Bolna AI"
+              style={{
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                borderRadius: '6px',
+                cursor: syncingAll ? 'not-allowed' : 'pointer',
+                boxShadow: '0 1px 2px rgba(37,99,235,0.2)',
+              }}
+            >
+              <RefreshCw size={12} className={syncingAll ? 'spin' : ''} />
+              <span>{syncingAll ? 'Syncing Bolna…' : 'Sync Bolna'}</span>
+            </button>
+
+            <button type="button" className="header-btn" onClick={loadCalls} title="Refresh table from local database">
               <RefreshCw size={12} />
               <span>Refresh</span>
             </button>
@@ -1493,6 +1580,15 @@ export default function LiveCall() {
                           style={{ color: '#0284c7' }}
                         >
                           <Pencil size={16} />
+                        </button>
+                        <button
+                          className="icon-btn"
+                          title={`Sync Call #${c.id} with Bolna AI`}
+                          onClick={() => handleSyncSingleCall(c.id)}
+                          disabled={syncingCallIds.has(c.id)}
+                          style={{ color: '#2563eb' }}
+                        >
+                          <RefreshCw size={15} className={syncingCallIds.has(c.id) ? 'spin' : ''} />
                         </button>
                         <button
                           className="icon-btn"

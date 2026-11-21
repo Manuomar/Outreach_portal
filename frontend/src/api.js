@@ -211,6 +211,7 @@ export const api = {
     })
   },
   syncCall: (id) => req('POST', `/calls/${id}/sync`),
+  syncBatchCalls: (b = {}) => req('POST', '/calls/sync-batch', b),
   hangup: (id) => req('POST', `/calls/${id}/hangup`),
   updateCall: (id, b) => req('PUT', `/calls/${id}`, b),
 

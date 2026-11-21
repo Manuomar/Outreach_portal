@@ -4,7 +4,8 @@ namespace App\Controllers;
 
 class CallsController extends ApiController
 {
-    private const LIST_COLS = 'c.id, c.lead_id, c.agent_id, c.bolna_agent_id, c.from_phone_number, c.call_status, c.interest_status, c.who_answered, c.interest_reason, c.it_head_name, c.it_head_phone, c.it_head_call_agreed, c.it_head_call_date, c.it_head_call_time, c.it_head_call_raw, c.next_action, c.summary,
+    // c.bolna_execution_id and c.is_manual included for live sync check
+    private const LIST_COLS = 'c.id, c.lead_id, c.agent_id, c.bolna_agent_id, c.bolna_execution_id, c.from_phone_number, c.call_status, c.is_manual, c.interest_status, c.who_answered, c.interest_reason, c.it_head_name, c.it_head_phone, c.it_head_call_agreed, c.it_head_call_date, c.it_head_call_time, c.it_head_call_raw, c.next_action, c.summary,
         c.dialect_detected, c.duration_sec, c.transferred_to_number, c.call_transferred, c.created_at, l.contact_name, l.phone, l.organization, l.designation, l.sector, l.district, a.name as agent_name';
 
     private function ensureTransferColumns(): void
@@ -32,6 +33,18 @@ class CallsController extends ApiController
                         'null'       => true,
                         'default'    => null,
                         'after'      => 'transferred_to_number',
+                    ],
+                ]);
+            }
+            if (!$db->fieldExists('is_manual', 'pitch_calls')) {
+                $forge = \Config\Database::forge();
+                $forge->addColumn('pitch_calls', [
+                    'is_manual' => [
+                        'type'       => 'TINYINT',
+                        'constraint' => 1,
+                        'null'       => false,
+                        'default'    => 0,
+                        'after'      => 'call_status',
                     ],
                 ]);
             }
@@ -107,14 +120,18 @@ class CallsController extends ApiController
         $needsSync = false;
         if (!empty($call['bolna_execution_id'])) {
             $status = $call['call_status'] ?? '';
-            if (in_array($status, ['queued', 'ringing', 'in_progress'])) {
-                $needsSync = true;
-            } elseif ($status === 'completed') {
-                $hasAnswers = $db->table('pitch_call_answers')->where('call_id', (int) $id)->countAllResults() > 0;
-                $createdAt = strtotime($call['created_at'] ?? 'now');
-                // If answers not yet saved and call is recent (<15 mins), sync fresh from Bolna
-                if (!$hasAnswers && (time() - $createdAt < 900)) {
+            // If organizer manually edited, do not overwrite with auto-sync
+            $isManual = !empty($call['is_manual']);
+            if (!$isManual) {
+                if (in_array($status, ['queued', 'ringing', 'in_progress'])) {
                     $needsSync = true;
+                } elseif ($status === 'completed') {
+                    $hasAnswers = $db->table('pitch_call_answers')->where('call_id', (int) $id)->countAllResults() > 0;
+                    $createdAt = strtotime($call['created_at'] ?? 'now');
+                    // If answers not yet saved and call is recent (<15 mins), sync fresh from Bolna
+                    if (!$hasAnswers && (time() - $createdAt < 900)) {
+                        $needsSync = true;
+                    }
                 }
             }
         }
@@ -215,6 +232,29 @@ class CallsController extends ApiController
         return $this->respond($this->runPipeline('bolna_call_cli.py', ['sync', '--call-id', (int) $id]));
     }
 
+    /** Batch sync multiple or recent calls from Bolna */
+    public function syncBatch()
+    {
+        $this->guard();
+        $b = $this->body();
+        $cliArgs = ['sync-batch'];
+        if (!empty($b['call_ids'])) {
+            $ids = is_array($b['call_ids']) ? $b['call_ids'] : explode(',', (string) $b['call_ids']);
+            $cleanIds = array_filter(array_map('intval', $ids));
+            if (!empty($cleanIds)) {
+                $cliArgs[] = '--call-ids';
+                $cliArgs[] = implode(',', $cleanIds);
+            }
+        }
+        $limit = !empty($b['limit']) ? (int) $b['limit'] : 20;
+        if ($limit > 100) $limit = 100;
+        $cliArgs[] = '--limit';
+        $cliArgs[] = $limit;
+
+        $res = $this->runPipeline('bolna_call_cli.py', $cliArgs);
+        return $this->respond($res);
+    }
+
     public function hangup($id)
     {
         $this->guard();
@@ -242,6 +282,7 @@ class CallsController extends ApiController
             'call_transferred',
             'next_action',
             'summary',
+            'is_manual',
         ];
         $data = [];
         foreach ($allowed as $f) {
@@ -258,13 +299,47 @@ class CallsController extends ApiController
                     $data['bolna_execution_id'] = null;
                     $data['duration_sec'] = null;
                     $data['end_time'] = null;
+                    $data['is_manual'] = 0;
                 }
             } else {
                 unset($data['call_status']);
             }
         }
+
+        // Protect organizer manual corrections from automated Bolna sync overwrite
+        if (!isset($data['is_manual']) && ($data['call_status'] ?? '') !== 'queued') {
+            $data['is_manual'] = 1;
+        }
+
         if ($data) {
             $this->db()->table('pitch_calls')->where('id', (int) $id)->update($data);
+
+            // Sync associated lead status when manual interest or meeting agreed is modified
+            if (isset($data['interest_status']) || isset($data['it_head_call_agreed'])) {
+                try {
+                    $callRow = $this->db()->table('pitch_calls')->where('id', (int) $id)->get()->getRowArray();
+                    if ($callRow && !empty($callRow['lead_id'])) {
+                        $interest = $data['interest_status'] ?? $callRow['interest_status'];
+                        $leadStatus = match ($interest) {
+                            'interested' => 'interested',
+                            'not_interested' => 'not_interested',
+                            'callback_requested' => 'callback',
+                            'maybe' => 'contacted',
+                            'not_reachable' => 'new',
+                            default => 'contacted',
+                        };
+                        $agreed = isset($data['it_head_call_agreed']) ? $data['it_head_call_agreed'] : $callRow['it_head_call_agreed'];
+                        $date = $data['it_head_call_date'] ?? $callRow['it_head_call_date'];
+                        if ($agreed && $date) {
+                            $leadStatus = 'meeting_scheduled';
+                        }
+                        $this->db()->table('pitch_leads')->where('id', (int) $callRow['lead_id'])->update([
+                            'lead_status' => $leadStatus
+                        ]);
+                    }
+                } catch (\Throwable $e) {}
+            }
+
             $this->audit('call.update', 'call', $id, $data);
         }
         return $this->respond(['success' => true]);

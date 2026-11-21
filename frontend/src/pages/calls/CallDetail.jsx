@@ -183,6 +183,7 @@ export default function CallDetail() {
     try {
       await api.updateCall(id, {
         ...form,
+        is_manual: 1,
         call_transferred: form.call_transferred === null || form.call_transferred === '' ? 0 : Number(form.call_transferred),
         transferred_to_number: form.transferred_to_number || null,
         it_head_call_agreed: form.it_head_call_agreed === null || form.it_head_call_agreed === '' ? null : Number(form.it_head_call_agreed),

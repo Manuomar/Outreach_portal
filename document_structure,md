@@ -1,0 +1,384 @@
+# 📄 Document Structure Guide — Outreach Portal Pitch Agent
+
+> यह guide बताती है कि जब आप **Specific Mode** या **Consultative Mode** में document upload करें, तो उस document में **कौन-कौन से topics होने चाहिए** ताकि AI model सही information fetch करके एक perfect system prompt generate कर सके।
+
+---
+
+## 🔵 MODE 1 — SPECIFIC PROJECT PITCH
+
+> **कब use करें:** जब आप किसी **एक specific project** को pitch करना हो (जैसे CCIMS, Panchayat Gateway, कोई single product)।
+
+---
+
+### 📋 Section 1: Company / Organization Identity
+
+यह information agent की पहचान और credibility के लिए ज़रूरी है।
+
+| Field | क्या लिखें | Example |
+|-------|-----------|---------|
+| **Company Name** | Spoken Hindi form में | ITI Limited → "आईटीआई लिमिटेड" |
+| **Company Founded Year** | Founding year | 1948 → "नाइनटीन फ़ॉर्टी-एट" |
+| **Official Website** | Spoken URL form | iti-ltd.com → "आई-टी-आई-लिमिटेड डॉट इन" |
+| **Agent Name** | AI agent का नाम | अजय, राहुल, प्रिया |
+| **Company Background** | 2-3 lines company overview | Government tech company, 1948 से... |
+
+---
+
+### 📋 Section 2: Project / Product Identity
+
+| Field | क्या लिखें | Example |
+|-------|-----------|---------|
+| **Project Name** | Full name + abbreviation | CCIMS - Central Contract & Construction Monitoring System |
+| **Target Domain** | किस sector/domain के लिए है | Government contracts, Construction monitoring |
+| **Target Geography** | कहाँ implement हुआ | Uttar Pradesh, राज्य भर में |
+| **Target Audience** | किसे pitch करना है | PWD officers, State dept officials |
+
+---
+
+### 📋 Section 3: Problem Statement ⚡ (सबसे ज़रूरी)
+
+> AI इसी से `[PROBLEM_STATEMENT]` और `[HOOK_LINE]` बनाता है।
+
+Document में **clearly mention करें:**
+
+- [ ] **Scale of problem** — कितने rupees की grant/contract annually आती है
+- [ ] **Core pain point** — एक ही vendor को बार-बार payment, fake vouchers, duplicate entries
+- [ ] **Monitoring gap** — central level पर real-time monitoring नहीं है
+- [ ] **Who suffers** — कौन सा department / कितनी units (जैसे 57,000+ panchayats)
+
+**Example format:**
+```
+उत्तर प्रदेश में हर साल ₹20,000 करोड़ से ज़्यादा के निर्माण कार्य आवंटित होते हैं।
+एक ही vendor को बार-बार payment, fake vouchers और central monitoring की कमी
+एक बड़ी चुनौती है।
+```
+
+---
+
+### 📋 Section 4: Engagement / Rhetorical Question
+
+> AI इससे `[ENGAGEMENT_QUESTION]` बनाता है — hook के बाद पूछा जाता है।
+
+Document में लिखें:
+- [ ] एक rhetorical question जो prospect को agree करने पर मजबूर करे
+- [ ] Format: *"क्या आपके हिसाब से भी [domain] की real-time monitoring ज़रूरी है?"*
+
+---
+
+### 📋 Section 5: Solution Statement 🛠️
+
+> AI इससे `[SOLUTION_STATEMENT]` बनाता है।
+
+Document में **step-by-step mention करें:**
+
+- [ ] **Core technology** — Mobile app, Face recognition, GPS, QR code
+- [ ] **How it works** — Login कैसे होता है, payment कहाँ से allow होता है
+- [ ] **Key restriction** — Geo-fenced payment (बाहर की location से payment बंद)
+- [ ] **User flow** — Field user → App → Face + GPS verify → Payment approve
+
+**Example format:**
+```
+System में हर project site के लिए mobile app पर face recognition, GPS location
+और QR code से login होता है। Payment केवल approved location से ही हो सकता है।
+Unauthorized location से payment automatically block हो जाता है।
+```
+
+---
+
+### 📋 Section 6: Impact Statement 📊 (Before vs After)
+
+> AI इससे `[IMPACT_STATEMENT]` बनाता है।
+
+Document में **before/after metrics** clearly दें:
+
+- [ ] **Before metric** — System से पहले क्या था (% में)
+- [ ] **After metric** — System के बाद क्या हुआ (% में)
+- [ ] **Time period** — कब से कब तक का data
+
+> [!IMPORTANT]
+> सभी numbers को **Devanagari Hindi** में लिखें document में ताकि AI directly use कर सके।
+> Example: "4.4%" → "फ़ोर पॉइंट फ़ोर परसेंट", "₹140 करोड़" → "वन हंड्रेड फ़ॉर्टी करोड़ रुपये"
+
+**Example format:**
+```
+System लागू होने से पहले unauthorized payments 4.4% थे।
+System के बाद यह घटकर 1.5% रह गए।
+(Data period: 2024-25 vs 2026-27 September तक)
+```
+
+---
+
+### 📋 Section 7: Achievement / Recognition Statement 🏆
+
+> AI इससे `[ACHIEVEMENT_STATEMENT]` बनाता है।
+
+Document में mention करें:
+
+- [ ] **Government recognition** — Ministry award, best practice listing
+- [ ] **Official citation** — Ministry का नाम, award का नाम
+- [ ] **Media coverage** — Newspaper mentions, official press releases
+- [ ] **Replication status** — क्या दूसरे states adopt कर रहे हैं
+
+**Example format:**
+```
+CCIMS को Panchayati Raj Ministry की "Best Practices for Replication" list में
+शामिल किया गया है। प्रमुख अखबारों ने इसे transparent governance की सबसे
+सफल पहल बताया है।
+```
+
+---
+
+### 📋 Section 8: Results Summary (1-2 Lines)
+
+> AI इससे `[RESULTS_SUMMARY]` बनाता है — short crisp overview।
+
+- [ ] **Top 1-2 outcomes** — सबसे impressive numbers
+- [ ] **What was caught/blocked** — Fake vouchers, suspicious payments
+
+---
+
+### 📋 Section 9: Detailed Data Points 📈 (Deep Dive for Cross-Questions)
+
+> AI इनसे `[DATA_POINT_1]` to `[DATA_POINT_5]` बनाता है।
+> यह तब use होते हैं जब prospect deep में सवाल पूछे।
+
+Document में **minimum 5 specific metrics** दें:
+
+| Data Point | क्या होना चाहिए |
+|-----------|----------------|
+| DATA_POINT_1 | Suspicious payments blocked (amount in Crores) |
+| DATA_POINT_2 | Invalid / duplicate vouchers rejected (count + amount) |
+| DATA_POINT_3 | Total grant coverage (annual monitoring scale) |
+| DATA_POINT_4 | Sites / units connected (GPS + biometric) |
+| DATA_POINT_5 | Fraud rate reduction (before % → after %) |
+
+> [!TIP]
+> हर data point को **Devanagari Hindi में Crores में** लिखें।
+> Example: "14,000 lakh" → "वन हंड्रेड फ़ॉर्टी करोड़"
+
+---
+
+### 📋 Section 10: Objection Handling FAQs
+
+> AI इनसे Knowledge Base का FAQ section बनाता है।
+
+Document में **5-10 common objections** और उनके जवाब लिखें:
+
+```
+Q: क्या यह system existing software से integrate होगा?
+A: जी सर, हमारा system API-based है और existing portals से integrate हो सकता है।
+
+Q: Implementation में कितना समय लगता है?
+A: Average 4-6 weeks, training included।
+
+Q: Data security कैसी है?
+A: Government-grade encryption, data India में ही store होता है।
+```
+
+---
+
+### 📋 Section 11: Technical Architecture (Optional but Recommended)
+
+- [ ] Mobile app platform (Android/iOS)
+- [ ] Backend technology stack
+- [ ] Integration points (existing government portals)
+- [ ] Offline capability (poor connectivity areas के लिए)
+
+---
+
+---
+
+## 🟢 MODE 2 — CONSULTATIVE / GENERAL COMPANY PITCH
+
+> **कब use करें:** जब आप **company को introduce** करना हो और **customer के department/need के हिसाब से dynamically solution propose** करना हो।
+
+---
+
+### 📋 Section 1: Company Identity (Same as Specific Mode)
+
+| Field | क्या लिखें |
+|-------|-----------|
+| Company Name (spoken Hindi) | आईटीआई लिमिटेड |
+| Founded Year (spoken) | नाइनटीन फ़ॉर्टी-एट |
+| Website (spoken) | आई-टी-आई-लिमिटेड डॉट इन |
+| Agent Name | अजय / राहुल |
+| Company tagline / intro | 2-3 lines company overview |
+
+---
+
+### 📋 Section 2: Broad Solution Categories 🗂️ (सबसे ज़रूरी)
+
+> AI इनसे `[HOOK_LINE]` और `[DISCOVERY_QUESTION]` बनाता है।
+> यह **4-5 umbrella solution areas** होने चाहिए, specific projects नहीं।
+
+Document में **Solution Categories** clearly list करें:
+
+```
+हमारी company इन क्षेत्रों में solutions बनाती है:
+1. e-Governance & Digital Services
+2. AI Automation & OCR
+3. Financial Monitoring & Anti-Fraud
+4. Biometric Tracking & Attendance
+5. Compliance & Reporting Dashboards
+```
+
+---
+
+### 📋 Section 3: Department-to-Solution Mapping 🗺️ (सबसे Critical)
+
+> यही वो section है जहाँ से AI **dynamically** prospect के department के according solutions suggest करता है।
+
+Document में **हर department के लिए 2-3 relevant solutions** clearly map करें:
+
+```
+## Panchayati Raj / Rural Development:
+- Voucher & payment real-time monitoring
+- Gram Sachiv mobile attendance + GPS tracking
+- AI OCR for paper register digitization
+
+## Health Department:
+- RBSK health intelligence system
+- Medical reimbursement automation
+- Field worker attendance + route compliance
+
+## Municipal Corporation (Nagar Nigam):
+- e-Nagar services portal
+- Property tax automation
+- Building plan approval system
+
+## PWD / Construction:
+- Contract monitoring system (CCIMS)
+- Site inspection with geo-tagging
+- Fund utilization dashboard
+
+## Finance / Accounts:
+- Smart billing & GST-TDS automation
+- Audit trail & compliance reports
+- Vendor payment deduplication
+
+## Education Department:
+- School inspection geo-tracking
+- Mid-day meal attendance
+- Teacher attendance mobile app
+
+## Legal / Courts:
+- Court case hearing tracker
+- Document digitization (OCR)
+- Case pendency dashboard
+
+## Traffic / RTO:
+- e-Rickshaw route allocation
+- QR code vehicle verification
+- Challan management system
+```
+
+> [!IMPORTANT]
+> जितने ज़्यादा departments map करेंगे, उतना better AI prospect के department को identify करके relevant solution suggest कर पाएगा।
+
+---
+
+### 📋 Section 4: Per-Solution Details (For Deep Dive)
+
+> जब prospect किसी solution में interest दिखाए, AI इन details से deep explanation देता है।
+
+हर solution के लिए document में यह लिखें:
+
+```
+### Solution: Voucher & Payment Monitoring
+**How it works:** Mobile app → Face + GPS verify → Payment authorize
+**Key feature:** Geo-fenced payment (unauthorized location block)
+**Result:** Unauthorized payments reduced from 4.4% to 1.5%
+**Scale:** 57,000+ sites covered
+**Integration:** Works with e-Gram Swaraj portal
+```
+
+---
+
+### 📋 Section 5: Proven Results per Solution 📊
+
+> AI इनसे per-solution impact data fetch करता है।
+
+Document में **हर major solution का measurable result** दें:
+
+| Solution | Metric | Result |
+|----------|--------|--------|
+| Payment Monitoring | Unauthorized payment rate | 4.4% → 1.5% |
+| OCR Automation | Manual data entry time saved | 70% reduction |
+| Biometric Attendance | Fake attendance caught | X cases in Y months |
+| Compliance Dashboard | Audit findings resolved | Z% faster |
+
+---
+
+### 📋 Section 6: Company Credentials & Trust Signals 🏅
+
+> Agent को prospect का trust जीतने के लिए यह ज़रूरी है।
+
+- [ ] **Government clients list** — कौन-कौन से departments में deployed है
+- [ ] **Awards & recognitions** — Ministry, State govt, industry awards
+- [ ] **Years of experience** — Domain expertise
+- [ ] **Scale delivered** — Total sites, users, transactions handled
+- [ ] **Media mentions** — Newspaper names (generic, not specific articles)
+
+---
+
+### 📋 Section 7: Objection Handling — Company Level
+
+> Consultative mode में prospect company-level objections करता है।
+
+Document में यह address करें:
+
+```
+Q: हमारे पास already कोई vendor है।
+A: समझ सकता हूँ सर। हम integration-first approach रखते हैं...
+
+Q: Budget approved नहीं है।
+A: जी सर, हम pilot/PoC model में भी शुरू कर सकते हैं...
+
+Q: Procurement process लंबी है।
+A: बिल्कुल सर, इसीलिए पहले एक demo meeting में ही सारी clarity हो जाती है...
+
+Q: यह real है या fraud call है?
+A: जी सर, हम [COMPANY_NAME] हैं, registered company। Website [WEBSITE_URL] पर verify कर सकते हैं।
+```
+
+---
+
+---
+
+## ✅ Quick Checklist — Before Uploading Document
+
+### Specific Mode Document ✔️
+- [ ] Company name (spoken Hindi form)
+- [ ] Founded year (spoken form)
+- [ ] Website (spoken form)
+- [ ] Project name + abbreviation
+- [ ] Problem statement with real ₹ figures (Crores in Devanagari)
+- [ ] Before/after impact metrics (% in Devanagari)
+- [ ] Government recognition / award
+- [ ] Minimum 5 specific data points (Crores in Devanagari)
+- [ ] 5+ objection handling Q&A
+
+### Consultative Mode Document ✔️
+- [ ] Company name, year, website (spoken Hindi)
+- [ ] 4-5 broad solution categories listed
+- [ ] Department-to-solution mapping (minimum 5 departments)
+- [ ] Per-solution: how it works + result metric
+- [ ] Company credentials & government clients
+- [ ] Company-level objection handling Q&A
+
+---
+
+## ⚠️ Common Mistakes — इनसे बचें
+
+> [!WARNING]
+> **Numbers English में मत लिखें।** Document में अगर "₹14,000 lakh" लिखा है तो AI confuse हो सकता है।
+> सही format: "वन हंड्रेड फ़ॉर्टी करोड़ रुपये"
+
+> [!CAUTION]
+> **Urdu/Arabic script document में बिल्कुल न हो।** AI को strict Devanagari mandate है।
+
+> [!NOTE]
+> **Specific mode में company का single project document upload करें।** दो अलग projects का एक ही document न डालें — AI confuse हो जाएगा।
+
+> [!TIP]
+> **Data points जितने specific होंगे उतना बेहतर।** "काफी savings हुई" की बजाय "वन हंड्रेड फ़ॉर्टी करोड़ रुपये के suspicious payments block हुए" लिखें।

@@ -150,7 +150,21 @@ def process_payload(data):
                     fields.update(flatten_extracted(src_val))
             hints = {k: v for k, (v, _) in fields.items() if v not in (None, "") and str(v).lower() != "null"}
 
-            sets, params = ["call_status=%s"], [status]
+            # Check if this call was manually corrected or updated by an organizer
+            is_manual = False
+            try:
+                c.execute("SELECT is_manual FROM pitch_calls WHERE id=%s", (call_id,))
+                row_m = c.fetchone()
+                if row_m and row_m.get("is_manual"):
+                    is_manual = bool(row_m.get("is_manual"))
+            except Exception:
+                pass
+
+            sets, params = [], []
+            if not is_manual:
+                sets.append("call_status=%s")
+                params.append(status)
+
             if status in FINAL:
                 sets.append("end_time=COALESCE(end_time, NOW())")
             if duration > 0:
@@ -170,17 +184,24 @@ def process_payload(data):
                     analysis["interest_status"] = "not_reachable"
                     analysis["who_answered"] = "no_answer"
                 agreed = analysis.get("it_head_call_agreed")
-                sets += ["interest_status=%s", "interest_reason=%s", "who_answered=%s", "it_head_call_agreed=%s",
-                         "it_head_name=%s", "it_head_phone=%s", "it_head_call_date=%s", "it_head_call_time=%s",
-                         "it_head_call_raw=%s", "dialect_detected=%s", "summary=%s", "next_action=%s", "analysis_json=%s"]
-                params += [analysis.get("interest_status"), analysis.get("interest_reason"), analysis.get("who_answered"),
-                           None if agreed is None else int(bool(agreed)), analysis.get("it_head_name"),
-                           _norm_phone(analysis.get("it_head_phone")), analysis.get("it_head_call_date"),
-                           analysis.get("it_head_call_time"), analysis.get("it_head_call_text"),
-                           analysis.get("dialect_detected"), analysis.get("summary"), analysis.get("next_action"),
-                           json.dumps(analysis, ensure_ascii=False, default=str)]
-            params.append(call_id)
-            c.execute(f"UPDATE pitch_calls SET {', '.join(sets)} WHERE id=%s", tuple(params))
+                if not is_manual:
+                    sets += ["interest_status=%s", "interest_reason=%s", "who_answered=%s", "it_head_call_agreed=%s",
+                             "it_head_name=%s", "it_head_phone=%s", "it_head_call_date=%s", "it_head_call_time=%s",
+                             "it_head_call_raw=%s", "dialect_detected=%s", "summary=%s", "next_action=%s", "analysis_json=%s"]
+                    params += [analysis.get("interest_status"), analysis.get("interest_reason"), analysis.get("who_answered"),
+                               None if agreed is None else int(bool(agreed)), analysis.get("it_head_name"),
+                               _norm_phone(analysis.get("it_head_phone")), analysis.get("it_head_call_date"),
+                               analysis.get("it_head_call_time"), analysis.get("it_head_call_text"),
+                               analysis.get("dialect_detected"), analysis.get("summary"), analysis.get("next_action"),
+                               json.dumps(analysis, ensure_ascii=False, default=str)]
+                else:
+                    # Keep manual user edits intact; save background audit/analysis details only
+                    sets += ["dialect_detected=COALESCE(dialect_detected, %s)", "analysis_json=%s"]
+                    params += [analysis.get("dialect_detected"), json.dumps(analysis, ensure_ascii=False, default=str)]
+
+            if sets:
+                params.append(call_id)
+                c.execute(f"UPDATE pitch_calls SET {', '.join(sets)} WHERE id=%s", tuple(params))
 
             turns = parse_turns(transcript)
             if turns:
@@ -267,15 +288,16 @@ def process_payload(data):
             #                ON DUPLICATE KEY UPDATE response_value=VALUES(response_value), confidence_score=VALUES(confidence_score)""",
             #             rows)
 
-                # lead ka status update
-                lead_status = {"interested": "interested", "not_interested": "not_interested",
-                               "callback_requested": "callback", "maybe": "contacted"}.get(analysis.get("interest_status"), "contacted")
-                if analysis.get("it_head_call_agreed") and analysis.get("it_head_call_date"):
-                    lead_status = "meeting_scheduled"
-                if analysis.get("interest_status") == "not_reachable":
-                    lead_status = "new"
-                c.execute("UPDATE pitch_leads l JOIN pitch_calls pc ON pc.lead_id=l.id SET l.lead_status=%s WHERE pc.id=%s",
-                          (lead_status, call_id))
+                # lead ka status update (sirf tab jab manual overwrite na ho)
+                if not is_manual:
+                    lead_status = {"interested": "interested", "not_interested": "not_interested",
+                                   "callback_requested": "callback", "maybe": "contacted"}.get(analysis.get("interest_status"), "contacted")
+                    if analysis.get("it_head_call_agreed") and analysis.get("it_head_call_date"):
+                        lead_status = "meeting_scheduled"
+                    if analysis.get("interest_status") == "not_reachable":
+                        lead_status = "new"
+                    c.execute("UPDATE pitch_leads l JOIN pitch_calls pc ON pc.lead_id=l.id SET l.lead_status=%s WHERE pc.id=%s",
+                              (lead_status, call_id))
         conn.commit()
         log.info("pitch_calls #%s: status=%s turns=%s interest=%s src=%s", call_id, status, len(turns),
                  analysis.get("interest_status"), analysis.get("_source"))

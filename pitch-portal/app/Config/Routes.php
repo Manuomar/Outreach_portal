@@ -39,6 +39,7 @@ $routes->group('api', static function ($routes) {
         // Calls
         $routes->get('calls', 'CallsController::index');
         $routes->post('calls/start', 'CallsController::start');
+        $routes->post('calls/sync-batch', 'CallsController::syncBatch');
         $routes->get('calls/(:num)', 'CallsController::show/$1');
         $routes->post('calls/(:num)/sync', 'CallsController::sync/$1');
         $routes->post('calls/(:num)/hangup', 'CallsController::hangup/$1');

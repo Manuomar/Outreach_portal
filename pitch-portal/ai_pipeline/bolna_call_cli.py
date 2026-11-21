@@ -219,6 +219,81 @@ def sync(call_id):
         out({"success": False, "error": str(e)})
 
 
+def sync_batch(call_ids=None, limit=20):
+    """Batch sync multiple calls or the most recent active/pending calls from Bolna AI."""
+    conn = None
+    try:
+        conn = get_db_connection()
+    except Exception as e:
+        return out({"success": False, "error": f"DB connection failed: {str(e)}"})
+
+    rows = []
+    try:
+        with conn.cursor() as c:
+            if call_ids:
+                fmt_ids = [int(x) for x in str(call_ids).split(",") if str(x).strip().isdigit()]
+                if not fmt_ids:
+                    return out({"success": False, "error": "No valid call IDs provided"})
+                placeholders = ",".join(["%s"] * len(fmt_ids))
+                c.execute(f"""
+                    SELECT pc.id, pc.bolna_execution_id, pc.call_status,
+                           ba.api_key, ba.base_url
+                    FROM pitch_calls pc
+                    LEFT JOIN pitch_agents pa ON (pc.agent_id = pa.id OR pc.bolna_agent_id = pa.bolna_agent_id)
+                    LEFT JOIN pitch_bolna_accounts ba ON pa.bolna_account_id = ba.id
+                    WHERE pc.id IN ({placeholders}) AND pc.bolna_execution_id IS NOT NULL AND pc.bolna_execution_id != ''
+                    ORDER BY pc.id DESC
+                """, tuple(fmt_ids))
+            else:
+                c.execute("""
+                    SELECT pc.id, pc.bolna_execution_id, pc.call_status,
+                           ba.api_key, ba.base_url
+                    FROM pitch_calls pc
+                    LEFT JOIN pitch_agents pa ON (pc.agent_id = pa.id OR pc.bolna_agent_id = pa.bolna_agent_id)
+                    LEFT JOIN pitch_bolna_accounts ba ON pa.bolna_account_id = ba.id
+                    WHERE pc.bolna_execution_id IS NOT NULL AND pc.bolna_execution_id != ''
+                      AND pc.call_status != 'queued'
+                      AND IFNULL(pc.is_manual, 0) != 1
+                    ORDER BY pc.id DESC
+                    LIMIT %s
+                """, (int(limit or 20),))
+            rows = c.fetchall()
+    except Exception as e:
+        return out({"success": False, "error": f"DB query error: {str(e)}"})
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    base_cfg = _cfg()
+    synced_ids = []
+    errors = []
+    session = requests.Session()
+
+    for r_call in rows:
+        cid = r_call["id"]
+        exec_id = r_call.get("bolna_execution_id")
+        api_key = r_call.get("api_key") or base_cfg.get("api_key")
+        base_url = (r_call.get("base_url") or base_cfg.get("base_url") or "https://api.bolna.dev").rstrip("/")
+        if not api_key or not exec_id:
+            continue
+        try:
+            r = session.get(f"{base_url}/executions/{exec_id}", headers={"Authorization": f"Bearer {api_key}"}, timeout=12)
+            if not r.ok:
+                errors.append(f"Call #{cid} Bolna {r.status_code}")
+                continue
+            data = r.json()
+            data.setdefault("id", exec_id)
+            data.setdefault("live_call_id", cid)
+            process_payload(data)
+            synced_ids.append(cid)
+        except Exception as e:
+            errors.append(f"Call #{cid} error: {str(e)}")
+
+    out({"success": True, "synced_count": len(synced_ids), "synced_ids": synced_ids, "errors": errors})
+
+
 def hangup(call_id):
     cfg = _cfg_for_call(call_id)
     row = _exec_id(call_id)
@@ -261,6 +336,14 @@ if __name__ == "__main__":
     start_p.add_argument("--agent-id", type=str, default=None)
     start_p.add_argument("--from-phone-number", type=str, default=None)
     sub.add_parser("sync").add_argument("--call-id", type=int, required=True)
+    batch_p = sub.add_parser("sync-batch")
+    batch_p.add_argument("--call-ids", type=str, default=None)
+    batch_p.add_argument("--limit", type=int, default=20)
     sub.add_parser("hangup").add_argument("--call-id", type=int, required=True)
     a = p.parse_args()
-    {"start": lambda: start(a.lead_id, a.agent_id, a.from_phone_number), "sync": lambda: sync(a.call_id), "hangup": lambda: hangup(a.call_id)}[a.cmd]()
+    {
+        "start": lambda: start(a.lead_id, a.agent_id, a.from_phone_number),
+        "sync": lambda: sync(a.call_id),
+        "sync-batch": lambda: sync_batch(a.call_ids, a.limit),
+        "hangup": lambda: hangup(a.call_id),
+    }[a.cmd]()
